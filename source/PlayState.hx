@@ -26,17 +26,18 @@ class PlayState extends FlxState
 		settings = new SettingsController();
 
 		var index_actor_geometry_pad:Pad = {
+			name: "actor geometry",
 			encoders: [
 				VOLUME => {
 					value: a.scale.x,
 					on_change: f -> a.scale.x = f,
-					name: "actor scale x",
+					name: "scale x",
 					minimum: 1
 				},
 				PAN => {
 					value: a.scale.y,
 					on_change: f -> a.scale.y = f,
-					name: "actor scale y",
+					name: "scale y",
 					minimum: 1,
 				}
 			]
@@ -84,18 +85,39 @@ class SettingsController
 
 	function setting_select(index_pad:Int)
 	{
-		index_pad_selected = index_pad;
-		trace('change pad to $index_pad_selected');
+		if (pads.length > index_pad)
+		{
+			index_pad_selected = index_pad;
+			fire_refresh_display();
+			trace('change pad to $index_pad_selected');
+		}
+	}
+
+	function fire_refresh_display()
+	{
+		fire.sendMessage(DisplayClear(false));
+		fire.sendMessage(DisplaySetText(pads[index_pad_selected].name, 1, 1, false));
+		var y = 12;
+		for (encoder in pads[index_pad_selected].encoders.keys())
+		{
+			var enc = pads[index_pad_selected].encoders[encoder];
+			var text_encoder = '${enc.name} ${enc.value}';
+			fire.sendMessage(DisplaySetText(text_encoder, 1, y, false));
+			y += 12;
+		}
+		fire.sendMessage(DisplayShow);
 	}
 
 	function setting_parameter_increase(encoder:EncoderMove)
 	{
 		pads[index_pad_selected].change(encoder, 1);
+		fire_refresh_display();
 	}
 
 	function setting_parameter_decrease(encoder:EncoderMove)
 	{
 		pads[index_pad_selected].change(encoder, -1);
+		fire_refresh_display();
 	}
 
 	public function pad_add(pad:Pad)
@@ -107,7 +129,9 @@ class SettingsController
 @:structInit
 class Pad
 {
-	var encoders:Map<EncoderMove, Parameter> = [];
+	public var name(default, null):String;
+
+	public var encoders(default, null):Map<EncoderMove, Parameter> = [];
 
 	public function change(encoder:EncoderMove, increment:Int)
 	{
@@ -137,6 +161,6 @@ class Parameter
 			value = minimum;
 		}
 		on_change(value);
-		trace('change $name by $increment to $value');
+		// trace('change $name by $increment to $value');
 	}
 }
