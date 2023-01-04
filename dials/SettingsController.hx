@@ -16,7 +16,7 @@ class SettingsController
 	var disk:Disk;
 	var fire:AkaiFireMidi;
 	var index_pad_selected:Int = 0;
-
+	var data:FileModel;
 	var pads:Array<Pad>;
 
 	public function new(disk:Disk)
@@ -99,6 +99,16 @@ class SettingsController
 
 	public function pad_add(pad:Pad)
 	{
+		if (data != null && data.pads != null)
+		{
+			var pads_matching = data.pads.filter(model -> model.name == pad.name);
+			if (pads_matching.length > 0)
+			{
+				var model_pad = pads_matching[0];
+				pad_set_from_model(pad, model_pad);
+			}
+		}
+
 		pads.push(pad);
 	}
 
@@ -111,24 +121,30 @@ class SettingsController
 		disk.save(json, disk_file_path);
 	}
 
+	function pad_set_from_model(pad:Pad, model_pad:PadModel)
+	{
+		for (model_enc in model_pad.encoders)
+		{
+			if (pad.encoders.exists(model_enc.encoder))
+			{
+				pad.encoders[model_enc.encoder].set(model_enc.value);
+			}
+		}
+	}
+
 	public function disk_load():Void
 	{
 		var json = disk.load(disk_file_path);
 
-		var data:FileModel = JSON.parse(json);
+		data = JSON.parse(json);
 
 		for (model_pad in data.pads)
 		{
-			for (model_enc in model_pad.encoders)
+			var pads_matching = pads.filter(pad -> pad.name == model_pad.name);
+			if (pads_matching.length > 0)
 			{
-				if (model_pad.index < pads.length)
-				{
-					var pad = pads[model_pad.index];
-					if (pad.encoders.exists(model_enc.encoder))
-					{
-						pad.encoders[model_enc.encoder].set(model_enc.value);
-					}
-				}
+				var pad = pads_matching[0];
+				pad_set_from_model(pad, model_pad);
 			}
 		}
 	}

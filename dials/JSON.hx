@@ -23,6 +23,7 @@ class JSON
 			}
 			models_pad.push({
 				index: index,
+				name: pad.name,
 				encoders: models_encoder
 			});
 		}
@@ -73,5 +74,6 @@ class EncoderModel
 class PadModel
 {
 	public var index:Int;
+	public var name:String;
 	public var encoders:Array<EncoderModel>;
 }

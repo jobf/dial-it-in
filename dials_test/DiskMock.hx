@@ -12,6 +12,7 @@ class DiskMock implements Disk
 	{
 		var pad:PadModel = {
 			index: 0,
+			name: "test_pad",
 			encoders: [
 				{
 					value: 100,
