@@ -6,6 +6,13 @@ import akaifirehx.midi.Ports;
 import flixel.FlxSprite;
 import flixel.FlxState;
 import flixel.util.FlxColor;
+import json2object.Error;
+import json2object.JsonParser;
+import json2object.JsonWriter;
+import sys.FileSystem;
+#if !web
+import sys.io.File;
+#end
 #if imagedisplay
 import akaifirehx.fire.display.Canvas.ImageCanvas as PixelCanvas;
 #else
@@ -43,6 +50,8 @@ class PlayState extends FlxState
 			]
 		}
 		settings.pad_add(index_actor_geometry_pad);
+
+		settings.disk_load();
 	}
 
 	override public function update(elapsed:Float)
@@ -81,6 +90,30 @@ class SettingsController
 		fire.events.onPadPress.add(index_pad -> setting_select(index_pad));
 		fire.events.onEncoderIncrement.add(encoder -> setting_parameter_increase(encoder));
 		fire.events.onEncoderDecrement.add(encoder -> setting_parameter_decrease(encoder));
+		fire.events.onButtonPress.add(button -> switch button
+		{
+			// case BROWSER:
+			// case PATUP:
+			// case PATDOWN:
+			// case GRIDLEFT:
+			// case GRIDRIGHT:
+			// case ALT:
+			// case STOP:
+			// case TRACK1:
+			// case TRACK2:
+			// case TRACK3:
+			// case TRACK4:
+			// case STEP:
+			// case NOTE:
+			// case DRUM:
+			// case PERFORM:
+			// case SHIFT:
+			case REC: disk_save();
+			// case PATTERN:
+			// case PLAY:
+			// case ENCODERMODE:
+			case _:
+		});
 	}
 
 	function setting_select(index_pad:Int)
@@ -124,6 +157,70 @@ class SettingsController
 	{
 		pads.push(pad);
 	}
+
+	var disk_file_path:String = "settings.json";
+
+	public function disk_save():Void
+	{
+		var models_pad:Array<PadModel> = [];
+		for (index => pad in pads)
+		{
+			var models_encoder:Array<EncoderModel> = [];
+			for (enc in pad.encoders.keys())
+			{
+				models_encoder.push({
+					value: pad.encoders[enc].value,
+					encoder: enc
+				});
+			}
+			models_pad.push({
+				index: index,
+				encoders: models_encoder
+			});
+		}
+
+		var model_file:FileModel = {
+			pads: models_pad
+		}
+
+		var writer = new JsonWriter<FileModel>();
+		var json:String = writer.write(model_file);
+
+		#if !web
+		File.saveContent(disk_file_path, json);
+		trace('saved to $disk_file_path');
+		#end
+	}
+
+	public function disk_load():Void
+	{
+		#if !web
+		if (FileSystem.exists(disk_file_path))
+		{
+			var json = File.getContent(disk_file_path);
+			var errors = new Array<Error>();
+			var data = new JsonParser<FileModel>(errors).fromJson(json, 'json-errors');
+			if (errors.length <= 0 && data != null)
+			{
+				for (model_pad in data.pads)
+				{
+					for (model_enc in model_pad.encoders)
+					{
+						if (model_pad.index < pads.length)
+						{
+							var pad = pads[model_pad.index];
+							if (pad.encoders.exists(model_enc.encoder))
+							{
+								pad.encoders[model_enc.encoder].set(model_enc.value);
+							}
+						}
+					}
+				}
+			}
+		}
+		trace('loaded from $disk_file_path');
+		#end
+	}
 }
 
 @:structInit
@@ -149,9 +246,8 @@ class Parameter
 	var maximum:Float = 1000;
 	var on_change:Float->Void;
 
-	public function change(increment:Int)
+	function changed():Void
 	{
-		value += increment;
 		if (value > maximum)
 		{
 			value = maximum;
@@ -163,4 +259,36 @@ class Parameter
 		on_change(value);
 		// trace('change $name by $increment to $value');
 	}
+
+	public function change(increment:Int)
+	{
+		value += increment;
+		changed();
+	}
+
+	public function set(value:Float)
+	{
+		this.value = value;
+		changed();
+	}
+}
+
+@:structInit
+class FileModel
+{
+	public var pads:Array<PadModel>;
+}
+
+@:structInit
+class EncoderModel
+{
+	public var encoder:EncoderMove;
+	public var value:Float;
+}
+
+@:structInit
+class PadModel
+{
+	public var index:Int;
+	public var encoders:Array<EncoderModel>;
 }

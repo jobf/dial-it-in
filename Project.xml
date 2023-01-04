@@ -38,6 +38,7 @@
 	<haxelib name="flixel" />
 	<haxelib name="akai-fire-hx" />
 	<haxelib name="format" />
+	<haxelib name="json2object" />
 	<!--In case you want to use the addons package-->
 	<!--<haxelib name="flixel-addons" />-->
 
