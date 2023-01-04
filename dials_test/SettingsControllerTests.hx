@@ -140,4 +140,66 @@ class SettingsControllerTests extends Test
 		@:privateAccess
 		Assert.equals("test_pad_2", settings.pads[2].name);
 	}
+
+	function test_encoders_are_listed_in_correct_order()
+	{
+		var pad_test:Pad = {
+			name: "test_pad",
+			encoders: [
+				VOLUME => {
+					value: 100,
+					on_change: f -> return,
+					name: "test_encoder_0",
+				},
+				PAN => {
+					value: 0,
+					on_change: f -> return,
+					name: "test_encoder_1",
+				},
+				FILTER => {
+					value: 0.5,
+					on_change: f -> return,
+					name: "test_encoder_2",
+				},
+				RESONANCE => {
+					value: 1000,
+					on_change: f -> return,
+					name: "test_encoder_3",
+				},
+			]
+		}
+
+		var encoder_infos:Array<String> = pad_test.encoders_list();
+
+		Assert.equals("test_encoder_0 100", encoder_infos[0]);
+		Assert.equals("test_encoder_1 0", encoder_infos[1]);
+		Assert.equals("test_encoder_2 0.5", encoder_infos[2]);
+		Assert.equals("test_encoder_3 1000", encoder_infos[3]);
+	}
+
+	function test_encoders_are_listed_even_empty()
+	{
+		var pad_test:Pad = {
+			name: "test_pad",
+			encoders: [
+				VOLUME => {
+					value: 100,
+					on_change: f -> return,
+					name: "test_encoder_0",
+				},
+				RESONANCE => {
+					value: 1000,
+					on_change: f -> return,
+					name: "test_encoder_3",
+				},
+			]
+		}
+
+		var encoder_infos:Array<String> = pad_test.encoders_list();
+
+		Assert.equals("test_encoder_0 100", encoder_infos[0]);
+		Assert.equals("", encoder_infos[1]);
+		Assert.equals("", encoder_infos[2]);
+		Assert.equals("test_encoder_3 1000", encoder_infos[3]);
+	}
 }

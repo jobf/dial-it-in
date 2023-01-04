@@ -76,11 +76,10 @@ class SettingsController
 		fire.sendMessage(DisplayClear(false));
 		fire.sendMessage(DisplaySetText(pads[index_pad_selected].name, 1, 1, false));
 		var y = 12;
-		for (encoder in pads[index_pad_selected].encoders.keys())
+
+		for (info in pads[index_pad_selected].encoders_list())
 		{
-			var enc = pads[index_pad_selected].encoders[encoder];
-			var text_encoder = '${enc.name} ${enc.value}';
-			fire.sendMessage(DisplaySetText(text_encoder, 1, y, false));
+			fire.sendMessage(DisplaySetText(info, 1, y, false));
 			y += 12;
 		}
 		fire.sendMessage(DisplayShow);
@@ -203,6 +202,27 @@ class Pad
 	public function change(encoder:EncoderMove, increment:Int)
 	{
 		encoders[encoder].change(increment);
+	}
+
+	function encoder_format_info(encoder:EncoderMove):String
+	{
+		if (encoders.exists(encoder))
+		{
+			var enc = encoders[encoder];
+			return '${enc.name} ${enc.value}';
+		}
+
+		return "";
+	}
+
+	public function encoders_list():Array<String>
+	{
+		return [
+			encoder_format_info(VOLUME),
+			encoder_format_info(PAN),
+			encoder_format_info(FILTER),
+			encoder_format_info(RESONANCE)
+		];
 	}
 }
 

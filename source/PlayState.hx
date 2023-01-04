@@ -35,6 +35,16 @@ class PlayState extends FlxState
 					on_change: f -> a.scale.y = f,
 					name: "scale y",
 					minimum: 1,
+				},
+				FILTER => {
+					value: a.x,
+					on_change: f -> a.x = f,
+					name: "x",
+				},
+				RESONANCE => {
+					value: a.y,
+					on_change: f -> a.y = f,
+					name: "y",
 				}
 			]
 		}
