@@ -5,6 +5,7 @@ import akaifirehx.midi.AkaiFireMidi;
 import akaifirehx.midi.Ports;
 import dials.Disk;
 import dials.JSON;
+import haxe.ds.ArraySort;
 #if imagedisplay
 import akaifirehx.fire.display.Canvas.ImageCanvas as PixelCanvas;
 #else
@@ -101,15 +102,23 @@ class SettingsController
 	{
 		if (data != null && data.pads != null)
 		{
-			var pads_matching = data.pads.filter(model -> model.name == pad.name);
-			if (pads_matching.length > 0)
+			var models_matching = data.pads.filter(model -> model.name == pad.name);
+			if (models_matching.length > 0)
 			{
-				var model_pad = pads_matching[0];
+				var model_pad = models_matching[0];
 				pad_set_from_model(pad, model_pad);
 			}
 		}
-
+		if (pad.index == null)
+		{
+			pad.index = pads.length;
+		}
 		pads.push(pad);
+
+		var encoder_count = [for (k in pad.encoders.keys()) k].length;
+		trace('added pad ${pad.name} ${pad.index} with $encoder_count encoders');
+
+		pads_sort();
 	}
 
 	var disk_file_path:String = "settings.json";
@@ -123,11 +132,15 @@ class SettingsController
 
 	function pad_set_from_model(pad:Pad, model_pad:PadModel)
 	{
+		pad.name = model_pad.name;
+		pad.index = model_pad.index;
+		trace('setting up pad ${pad.name} ${pad.index}');
 		for (model_enc in model_pad.encoders)
 		{
 			if (pad.encoders.exists(model_enc.encoder))
 			{
 				pad.encoders[model_enc.encoder].set(model_enc.value);
+				trace('set encoder value');
 			}
 		}
 	}
@@ -135,17 +148,45 @@ class SettingsController
 	public function disk_load():Void
 	{
 		var json = disk.load(disk_file_path);
-
+		trace('loaded json');
 		data = JSON.parse(json);
+		trace('parsed json');
 
 		for (model_pad in data.pads)
 		{
+			trace('setting up model ${model_pad.index}:${model_pad.name}');
 			var pads_matching = pads.filter(pad -> pad.name == model_pad.name);
 			if (pads_matching.length > 0)
 			{
+				trace('set existing pad in pads array');
 				var pad = pads_matching[0];
 				pad_set_from_model(pad, model_pad);
 			}
+		}
+
+		trace('loaded ${data.pads.length} models');
+
+		pads_sort();
+	}
+
+	function pads_sort()
+	{
+		if (pads.length > 0)
+		{
+			trace('total pads is ${pads.length}');
+
+			ArraySort.sort(pads, (pad1, pad2) ->
+			{
+				if (pad1.index > pad2.index)
+				{
+					return 1;
+				}
+				if (pad1.index < pad2.index)
+				{
+					return -1;
+				}
+				return 0;
+			});
 		}
 	}
 }
@@ -153,7 +194,9 @@ class SettingsController
 @:structInit
 class Pad
 {
-	public var name(default, null):String;
+	public var index:Null<Int> = null;
+
+	public var name:String = "";
 
 	public var encoders(default, null):Map<EncoderMove, Parameter> = [];
 

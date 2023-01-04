@@ -13,11 +13,13 @@ class PlayState extends FlxState
 	override public function create()
 	{
 		super.create();
+
+		settings = new SettingsController(new DiskSys());
+		settings.disk_load();
+
 		var a = new Actor();
 		a.screenCenter();
 		add(a);
-
-		settings = new SettingsController(new DiskSys());
 
 		var index_actor_geometry_pad:Pad = {
 			name: "actor geometry",
@@ -36,9 +38,8 @@ class PlayState extends FlxState
 				}
 			]
 		}
-		settings.pad_add(index_actor_geometry_pad);
 
-		settings.disk_load();
+		settings.pad_add(index_actor_geometry_pad);
 	}
 
 	override public function update(elapsed:Float)
