@@ -4,9 +4,7 @@ import akaifirehx.fire.Control.EncoderMove;
 import akaifirehx.midi.AkaiFireMidi;
 import akaifirehx.midi.Ports;
 import dials.Disk;
-import json2object.Error;
-import json2object.JsonParser;
-import json2object.JsonWriter;
+import dials.JSON;
 #if imagedisplay
 import akaifirehx.fire.display.Canvas.ImageCanvas as PixelCanvas;
 #else
@@ -106,29 +104,7 @@ class SettingsController
 
 	public function disk_save():Void
 	{
-		var models_pad:Array<PadModel> = [];
-		for (index => pad in pads)
-		{
-			var models_encoder:Array<EncoderModel> = [];
-			for (enc in pad.encoders.keys())
-			{
-				models_encoder.push({
-					value: pad.encoders[enc].value,
-					encoder: enc
-				});
-			}
-			models_pad.push({
-				index: index,
-				encoders: models_encoder
-			});
-		}
-
-		var model_file:FileModel = {
-			pads: models_pad
-		}
-
-		var writer = new JsonWriter<FileModel>();
-		var json:String = writer.write(model_file);
+		var json:String = JSON.serialize(pads);
 
 		Disk.save(json, disk_file_path);
 	}
@@ -136,21 +112,19 @@ class SettingsController
 	public function disk_load():Void
 	{
 		var json = Disk.load(disk_file_path);
-		var errors = new Array<Error>();
-		var data = new JsonParser<FileModel>(errors).fromJson(json, 'json-errors');
-		if (errors.length <= 0 && data != null)
+
+		var data:FileModel = JSON.parse(json);
+
+		for (model_pad in data.pads)
 		{
-			for (model_pad in data.pads)
+			for (model_enc in model_pad.encoders)
 			{
-				for (model_enc in model_pad.encoders)
+				if (model_pad.index < pads.length)
 				{
-					if (model_pad.index < pads.length)
+					var pad = pads[model_pad.index];
+					if (pad.encoders.exists(model_enc.encoder))
 					{
-						var pad = pads[model_pad.index];
-						if (pad.encoders.exists(model_enc.encoder))
-						{
-							pad.encoders[model_enc.encoder].set(model_enc.value);
-						}
+						pad.encoders[model_enc.encoder].set(model_enc.value);
 					}
 				}
 			}
@@ -206,24 +180,4 @@ class Parameter
 		this.value = value;
 		changed();
 	}
-}
-
-@:structInit
-class FileModel
-{
-	public var pads:Array<PadModel>;
-}
-
-@:structInit
-class EncoderModel
-{
-	public var encoder:EncoderMove;
-	public var value:Float;
-}
-
-@:structInit
-class PadModel
-{
-	public var index:Int;
-	public var encoders:Array<EncoderModel>;
 }
