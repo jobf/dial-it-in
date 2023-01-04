@@ -5,9 +5,17 @@ import sys.FileSystem;
 import sys.io.File;
 #end
 
-class Disk
+interface Disk
 {
-	public static function save(json:String, disk_file_path:String):Void
+	public function save(json:String, disk_file_path:String):Void;
+	public function load(disk_file_path:String):String;
+}
+
+class DiskSys implements Disk
+{
+	public function new() {}
+
+	public function save(json:String, disk_file_path:String):Void
 	{
 		#if !web
 		File.saveContent(disk_file_path, json);
@@ -15,7 +23,7 @@ class Disk
 		#end
 	}
 
-	public static function load(disk_file_path:String):String
+	public function load(disk_file_path:String):String
 	{
 		#if !web
 		if (FileSystem.exists(disk_file_path))

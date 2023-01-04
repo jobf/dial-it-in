@@ -1,5 +1,6 @@
 package;
 
+import dials.Disk;
 import dials.SettingsController;
 import flixel.FlxSprite;
 import flixel.FlxState;
@@ -16,7 +17,7 @@ class PlayState extends FlxState
 		a.screenCenter();
 		add(a);
 
-		settings = new SettingsController();
+		settings = new SettingsController(new DiskSys());
 
 		var index_actor_geometry_pad:Pad = {
 			name: "actor geometry",

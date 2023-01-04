@@ -13,13 +13,15 @@ import akaifirehx.fire.display.Canvas.OledCanvas as PixelCanvas;
 
 class SettingsController
 {
+	var disk:Disk;
 	var fire:AkaiFireMidi;
 	var index_pad_selected:Int = 0;
 
 	var pads:Array<Pad>;
 
-	public function new()
+	public function new(disk:Disk)
 	{
+		this.disk = disk;
 		pads = [];
 		var canvas = new PixelCanvas();
 
@@ -106,12 +108,12 @@ class SettingsController
 	{
 		var json:String = JSON.serialize(pads);
 
-		Disk.save(json, disk_file_path);
+		disk.save(json, disk_file_path);
 	}
 
 	public function disk_load():Void
 	{
-		var json = Disk.load(disk_file_path);
+		var json = disk.load(disk_file_path);
 
 		var data:FileModel = JSON.parse(json);
 

@@ -1,0 +1,10 @@
+-cp dials
+-cp dials_test
+-lib utest
+-lib akai-fire-hx
+-lib json2object
+-lib format
+-main RunTests
+-D no-deprecation-warnings
+--cpp dials_test/build/cpp
+--cmd ./dials_test/build/cpp/RunTests
