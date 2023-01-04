@@ -31,6 +31,7 @@
 
 	<set name="BUILD_DIR" value="export" />
 	<source path="source" />
+	<source path="dials" />
 	<assets path="assets" />
 
 	<!-- _______________________________ Libraries ______________________________ -->
