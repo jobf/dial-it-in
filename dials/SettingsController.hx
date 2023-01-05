@@ -18,15 +18,18 @@ class SettingsController
 	var disk:Disk;
 	var fire:AkaiFireMidi;
 	var index_pad_selected:Int = 0;
+	var index_palette:Int = 0;
 	var data:FileModel;
 	var pads:Array<Pad>;
-
+	var palette:Palette;
+	
 	public var on_button_press:Button->Void = button -> trace('$button pressed');
 
 	public function new(disk:Disk)
 	{
 		this.disk = disk;
 		pads = [];
+		palette = {};
 		var canvas = new PixelCanvas();
 
 		var firePortConfig:PortConfig = {
@@ -74,6 +77,7 @@ class SettingsController
 			y += 12;
 		}
 		fire.sendMessage(DisplayShow);
+		// fire.sendMessage(PadSingleColor())
 	}
 
 	function setting_parameter_increase(encoder:EncoderMove)
@@ -110,6 +114,9 @@ class SettingsController
 			pad.index = pads.length;
 		}
 		pads.push(pad);
+		var x = Grid.column(pad.index);
+		var y = Grid.row(pad.index);
+		fire.sendMessage(PadSingleColor(palette.colors[pad.index_palette], x, y));
 
 		var encoder_count = [for (k in pad.encoders.keys()) k].length;
 		trace('added pad ${pad.name} ${pad.index} with $encoder_count encoders');
@@ -130,6 +137,7 @@ class SettingsController
 	{
 		pad.name = model_pad.name;
 		pad.index = model_pad.index;
+		pad.index_palette = model_pad.index_palette;
 		trace('setting up pad ${pad.name} ${pad.index}');
 		for (model_enc in model_pad.encoders)
 		{
@@ -191,10 +199,11 @@ class SettingsController
 class Pad
 {
 	public var index:Null<Int> = null;
-
 	public var name:String = "";
+	public var index_palette:Int = 0;
 
 	public var encoders(default, null):Map<EncoderMove, Parameter> = [];
+
 
 	public function change(encoder:EncoderMove, direction:Int)
 	{
@@ -259,5 +268,35 @@ class Parameter
 	{
 		this.value = value;
 		changed();
+	}
+}
+
+@:structInit
+class Palette
+{
+	public var colors:Array<Int> = 
+	[
+		0x793516,
+		0xa11898,
+		0x0b0d68,
+		0x2f935c,
+		0x86910f,
+		0x335b9e,
+	];
+}
+
+class Grid{
+	static var width:Int = 64;
+	
+	public static function index(column:Int, row:Int):Int {
+		return column + width * row;
+	}
+	
+	public static function column(index:Int):Int {
+		return Std.int(index % width);
+	}
+
+	public static function row(index:Int):Int {
+		return Std.int(index / width);
 	}
 }

@@ -23,11 +23,12 @@ class JSON
 			}
 			models_pad.push({
 				index: index,
+				index_palette: pad.index,
 				name: pad.name,
 				encoders: models_encoder
 			});
 		}
-
+		var a = [];
 		var model_file:FileModel = {
 			pads: models_pad
 		}
@@ -74,6 +75,7 @@ class EncoderModel
 class PadModel
 {
 	public var index:Int;
+	public var index_palette:Int;
 	public var name:String;
 	public var encoders:Array<EncoderModel>;
 }

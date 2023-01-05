@@ -22,9 +22,10 @@ class PlayState extends FlxState
 		var y_screen_center = FlxG.height * 0.5;
 		actor = new Actor(0, y_screen_center);
 		add(actor);
-
+		
 		settings.pad_add({
 			name: "actor geometry",
+			index_palette: 0,
 			encoders: [
 				VOLUME => {
 					value: actor.scale.x,
@@ -53,6 +54,7 @@ class PlayState extends FlxState
 
 		settings.pad_add({
 			name: "actor jump",
+			index_palette: 1,
 			encoders: [
 				VOLUME => {
 					value: actor.envelope.attackTime,
