@@ -87,14 +87,20 @@ class SettingsController
 
 	function setting_parameter_increase(encoder:EncoderMove)
 	{
+		if (pads[index_pad_selected].encoders.exists(encoder))
+		{
 		pads[index_pad_selected].change(encoder, 1);
 		fire_refresh_display();
+		}
 	}
 
 	function setting_parameter_decrease(encoder:EncoderMove)
 	{
+		if (pads[index_pad_selected].encoders.exists(encoder))
+		{
 		pads[index_pad_selected].change(encoder, -1);
 		fire_refresh_display();
+		}
 	}
 
 	public function pad_add(pad:Pad)
