@@ -1,5 +1,6 @@
 package dials;
 
+import akaifirehx.fire.Control.Button;
 import akaifirehx.fire.Control.EncoderMove;
 import akaifirehx.midi.AkaiFireMidi;
 import akaifirehx.midi.Ports;
@@ -20,6 +21,8 @@ class SettingsController
 	var data:FileModel;
 	var pads:Array<Pad>;
 
+	public var on_button_press:Button->Void = button -> trace('$button pressed');
+
 	public function new(disk:Disk)
 	{
 		this.disk = disk;
@@ -35,30 +38,18 @@ class SettingsController
 		fire.events.onPadPress.add(index_pad -> setting_select(index_pad));
 		fire.events.onEncoderIncrement.add(encoder -> setting_parameter_increase(encoder));
 		fire.events.onEncoderDecrement.add(encoder -> setting_parameter_decrease(encoder));
+		fire.events.onButtonPress.add(button -> button_press(button));
+
 		fire.events.onButtonPress.add(button -> switch button
 		{
-			// case BROWSER:
-			// case PATUP:
-			// case PATDOWN:
-			// case GRIDLEFT:
-			// case GRIDRIGHT:
-			// case ALT:
-			// case STOP:
-			// case TRACK1:
-			// case TRACK2:
-			// case TRACK3:
-			// case TRACK4:
-			// case STEP:
-			// case NOTE:
-			// case DRUM:
-			// case PERFORM:
-			// case SHIFT:
 			case REC: disk_save();
-			// case PATTERN:
-			// case PLAY:
-			// case ENCODERMODE:
 			case _:
 		});
+	}
+
+	function button_press(button:Button)
+	{
+		on_button_press(button);
 	}
 
 	function setting_select(index_pad:Int)
@@ -89,8 +80,8 @@ class SettingsController
 	{
 		if (pads[index_pad_selected].encoders.exists(encoder))
 		{
-		pads[index_pad_selected].change(encoder, 1);
-		fire_refresh_display();
+			pads[index_pad_selected].change(encoder, 1);
+			fire_refresh_display();
 		}
 	}
 
@@ -98,8 +89,8 @@ class SettingsController
 	{
 		if (pads[index_pad_selected].encoders.exists(encoder))
 		{
-		pads[index_pad_selected].change(encoder, -1);
-		fire_refresh_display();
+			pads[index_pad_selected].change(encoder, -1);
+			fire_refresh_display();
 		}
 	}
 
@@ -205,9 +196,10 @@ class Pad
 
 	public var encoders(default, null):Map<EncoderMove, Parameter> = [];
 
-	public function change(encoder:EncoderMove, increment:Int)
+	public function change(encoder:EncoderMove, direction:Int)
 	{
-		encoders[encoder].change(increment);
+		// var
+		encoders[encoder].change(direction);
 	}
 
 	function encoder_format_info(encoder:EncoderMove):String
@@ -240,6 +232,7 @@ class Parameter
 
 	var minimum:Float = 0;
 	var maximum:Float = 1000;
+	var increment:Float = 1;
 	var on_change:Float->Void;
 
 	function changed():Void
@@ -256,9 +249,9 @@ class Parameter
 		// trace('change $name by $increment to $value');
 	}
 
-	public function change(increment:Int)
+	public function change(direction:Int)
 	{
-		value += increment;
+		value += increment * direction;
 		changed();
 	}
 
