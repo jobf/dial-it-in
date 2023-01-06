@@ -2,24 +2,24 @@ package automation;
 
 class WaveGenerate
 {
-	public static inline function sine(frequencyHz:Float, position:Float, sampleRate:Float):Float
+	public static inline function sine(frequency:Float, position:Float, sampleRate:Float):Float
 	{
-		return Math.sin(2.0 * Math.PI * position * frequencyHz / sampleRate);
+		return Math.sin(2.0 * Math.PI * position * frequency / sampleRate);
 	}
 
-	public static inline function triangle(frequencyHz:Float, position:Float, sampleRate:Float):Float
+	public static inline function triangle(frequency:Float, position:Float, sampleRate:Float):Float
 	{
-		return Math.asin(sine(frequencyHz, position, sampleRate)) * (1.0 / Math.PI);
+		return Math.asin(sine(frequency, position, sampleRate)) * (1.0 / Math.PI);
 	}
 
-	public static inline function pulse(frequencyHz:Float, position:Float, sampleRate:Float):Float
+	public static inline function pulse(frequency:Float, position:Float, sampleRate:Float):Float
 	{
-		return Math.sin((position) * Math.PI * 2 / sampleRate * frequencyHz) > 0 ? 1.0 : -1.0;
+		return Math.sin((position) * Math.PI * 2 / sampleRate * frequency) > 0 ? 1.0 : -1.0;
 	}
 
-	public static inline function saw(frequencyHz:Float, position:Float, sampleRate:Float):Float
+	public static inline function saw(frequency:Float, position:Float, sampleRate:Float):Float
 	{
-		return (2 * (position % (sampleRate / frequencyHz)) / (sampleRate / frequencyHz) - 1);
+		return (2 * (position % (sampleRate / frequency)) / (sampleRate / frequency) - 1);
 	}
 }
 
@@ -31,14 +31,14 @@ enum WaveShape
 	SAW;
 }
 
-typedef Oscillator = (frequencyHz:Float, position:Float, sampleRate:Float) -> Float;
+typedef Oscillator = (frequency:Float, position:Float, sampleRate:Float) -> Float;
 
 @:structInit
 class LFO
 {
-	public var frequency_hz:Float;
+	public var frequency:Float;
 	var sampleRate:Int;
-	var oscillator:Oscillator = (frequencyHz:Float, position:Float, sampleRate:Float) -> 0;
+	var oscillator:Oscillator = (frequency:Float, position:Float, sampleRate:Float) -> 0;
 	var position:Float = 0;
 	public var shape(default, set):WaveShape;
 
@@ -62,6 +62,6 @@ class LFO
 	public function next():Float
 	{
 		position ++;
-		return oscillator(frequency_hz, position, sampleRate);
+		return oscillator(frequency, position, sampleRate);
 	}
 }

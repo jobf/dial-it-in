@@ -104,7 +104,8 @@ class PlayState extends FlxState
 				// },
 				FILTER => {
 					value: actor.jump_height,
-					on_change: f -> actor.lfo.frequency_hz = f,
+					on_change: f -> actor.lfo.frequency = f,
+					increment: 0.01,
 					name: "speed",
 				},
 				RESONANCE => {
@@ -206,8 +207,8 @@ class Actor
 		envelope.releaseTime = 0.3;
 		lfo = {
 			shape: SINE,
-			sampleRate: 44100,
-			frequency_hz: 30
+			sampleRate: framesPerSecond,
+			frequency: 1
 		};
 		lfo.shape = SINE;
 	}
@@ -215,7 +216,7 @@ class Actor
 	public function update(elapsed:Float)
 	{
 		var amp_jump = envelope.nextAmplitude();
-		var amp_wobble = lfo.next(elapsed);
+		var amp_wobble = lfo.next();
 		var jump = -(jump_height * amp_jump);
 		var wobble = amp_wobble * y_wobble;
 		graphic.y = y + jump + wobble;
