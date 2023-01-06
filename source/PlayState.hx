@@ -92,7 +92,31 @@ class PlayState extends FlxState
 			// case GRIDRIGHT:
 			// case ALT:
 			// case STOP:
-			case TRACK1: actor.perform();
+			case TRACK1: actor.envelope.open();
+			// case TRACK2:
+			// case TRACK3:
+			// case TRACK4:
+			// case STEP:
+			// case NOTE:
+			// case DRUM:
+			// case PERFORM:
+			// case SHIFT:
+			// case REC:
+			// case PATTERN:
+			// case PLAY:
+			// case ENCODERMODE:
+			case _:
+		}
+
+		settings.on_button_release = button -> switch button {
+			// case BROWSER:
+			// case PATUP:
+			// case PATDOWN:
+			// case GRIDLEFT:
+			// case GRIDRIGHT:
+			// case ALT:
+			// case STOP:
+			case TRACK1: actor.envelope.close();
 			// case TRACK2:
 			// case TRACK3:
 			// case TRACK4:
@@ -116,7 +140,11 @@ class PlayState extends FlxState
 		super.update(elapsed);
 		if (FlxG.keys.justPressed.J)
 		{
-			actor.perform();
+			actor.press();
+		}
+		if (FlxG.keys.justReleased.J)
+		{
+			actor.release();
 		}
 	}
 }
@@ -146,8 +174,11 @@ class Actor extends FlxSprite
 		y = y_actor - (jump_height * amp_jump);
 	}
 
-	public function perform()
-	{
-		envelope.trigger();
+	public function press() {
+		envelope.open();
+	}
+
+	public function release() {
+		envelope.close();
 	}
 }

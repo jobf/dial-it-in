@@ -24,7 +24,8 @@ class SettingsController
 	var palette:Palette;
 	
 	public var on_button_press:Button->Void = button -> trace('$button pressed');
-
+	public var on_button_release:Button->Void = button -> trace('$button released');
+	
 	public function new(disk:Disk)
 	{
 		this.disk = disk;
@@ -42,7 +43,7 @@ class SettingsController
 		fire.events.onEncoderIncrement.add(encoder -> setting_parameter_increase(encoder));
 		fire.events.onEncoderDecrement.add(encoder -> setting_parameter_decrease(encoder));
 		fire.events.onButtonPress.add(button -> button_press(button));
-
+		fire.events.onButtonRelease.add(button -> button_release(button));
 		fire.events.onButtonPress.add(button -> switch button
 		{
 			case REC: disk_save();
@@ -53,6 +54,10 @@ class SettingsController
 	function button_press(button:Button)
 	{
 		on_button_press(button);
+	}
+
+	function button_release(button:Button){
+		on_button_release(button);
 	}
 
 	function setting_select(index_pad:Int)

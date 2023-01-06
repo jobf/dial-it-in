@@ -4,6 +4,7 @@ enum EnvelopeState
 {
 	Closed;
 	Attack;
+	Sustain;
 	Release;
 }
 
@@ -12,7 +13,8 @@ class Envelope
 	public var attackTime:Float = 0.001;
 	public var releaseTime:Float = 1.5;
 
-	var is_triggered:Bool = false;
+	var is_opening:Bool = false;
+	var is_closing:Bool = false;
 	var amplitude:Ramp;
 	var state:EnvelopeState = Closed;
 
@@ -23,9 +25,19 @@ class Envelope
 		}
 	}
 
-	public function trigger()
+	public function open()
 	{
-		is_triggered = true;
+		if(state == Closed){
+			is_opening = true;
+		}
+	}
+
+
+	public function close()
+	{
+		if(state == Sustain){
+			is_closing = true;
+		}
 	}
 
 	public function nextAmplitude():Float
@@ -33,16 +45,23 @@ class Envelope
 		switch state
 		{
 			case Closed:
-				if (is_triggered && amplitude.isFinished())
+				if (is_opening && amplitude.isFinished())
 				{
 					attack_start();
 				}
 			case Attack:
 				if (amplitude.isFinished())
 				{
+					state = Sustain;
+					trace('ramp start Sustain');
+				}
+			case Sustain:
+				if (is_closing)
+				{
 					state = Release;
 					trace('ramp start Release');
 					amplitude.setRamp(0.0001, releaseTime);
+					is_closing = false;
 				}
 			case Release:
 				if (amplitude.isFinished())
@@ -60,7 +79,8 @@ class Envelope
 
 	function attack_start()
 	{
-		is_triggered = false;
+		is_opening = false;
+		is_closing = false;
 		state = Attack;
 		trace('ramp start Attack');
 		amplitude.setRamp(1.0, attackTime);
