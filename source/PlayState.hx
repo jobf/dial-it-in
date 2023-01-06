@@ -4,9 +4,8 @@ import automation.Envelope;
 import dials.Disk;
 import dials.SettingsController;
 import flixel.FlxG;
-import flixel.FlxSprite;
 import flixel.FlxState;
-import flixel.util.FlxColor;
+import flixel.Graphics;
 
 class PlayState extends FlxState
 {
@@ -21,21 +20,21 @@ class PlayState extends FlxState
 		settings.disk_load();
 		var y_screen_center = FlxG.height * 0.5;
 		actor = new Actor(0, y_screen_center);
-		add(actor);
+		add(actor.graphic);
 		
 		settings.pad_add({
 			name: "actor geometry",
 			index_palette: 0,
 			encoders: [
 				VOLUME => {
-					value: actor.scale.x,
-					on_change: f -> actor.scale.x = f,
+					value: actor.graphic.scale.x,
+					on_change: f -> actor.graphic.scale.x = f,
 					name: "scale x",
 					minimum: 1
 				},
 				PAN => {
-					value: actor.scale.y,
-					on_change: f -> actor.scale.y = f,
+					value: actor.graphic.scale.y,
+					on_change: f -> actor.graphic.scale.y = f,
 					name: "scale y",
 					minimum: 1,
 				},
@@ -132,7 +131,7 @@ class PlayState extends FlxState
 			case _:
 		}
 
-		actor.screenCenter();
+		actor.graphic.screenCenter();
 		add(new SettingsDisplay(settings));
 	}
 
@@ -147,32 +146,34 @@ class PlayState extends FlxState
 		{
 			actor.release();
 		}
+
+		actor.update(elapsed);
 	}
 }
 
-class Actor extends FlxSprite
+class Actor
 {
 	public var envelope:Envelope;
-
+	public var graphic:Fill;
 	public var jump_height:Float = 200;
 
-	var y_actor:Float;
+	var x:Float;
+	var y:Float;
 
 	public function new(x:Float = 0, y:Float = 0)
 	{
-		super(x, y);
-		y_actor = y;
-		makeGraphic(1, 1, FlxColor.WHITE);
+		this.x = x;
+		this.y = y;
+		graphic = new Fill(x, y);
 		var framesPerSecond = 60;
 		envelope = new Envelope(framesPerSecond);
 		envelope.releaseTime = 0.3;
 	}
 
-	override function update(elapsed:Float)
+	public function update(elapsed:Float)
 	{
-		super.update(elapsed);
 		var amp_jump = envelope.nextAmplitude();
-		y = y_actor - (jump_height * amp_jump);
+		graphic.y = y - (jump_height * amp_jump);
 	}
 
 	public function press() {
@@ -182,41 +183,4 @@ class Actor extends FlxSprite
 	public function release() {
 		envelope.close();
 	}
-}
-
-class SettingsDisplay extends FlxSprite{
-
-	var settings:SettingsController;
-	var grid_width:Int = 128;
-	var grid_height:Int = 64;
-
-	public function new(x:Float = 0, y:Float = 0, settings:SettingsController)
-		{
-			super(x, y);
-			this.settings = settings;
-			makeGraphic(grid_width, grid_height, FlxColor.WHITE);
-		}
-	
-		override function update(elapsed:Float)
-		{
-
-			@:privateAccess
-			var pixels = settings.canvas.image.getPixels();
-			for (i => pixel in pixels) {
-				graphic.bitmap.setPixel(grid_column(i), grid_row(i), pixel);
-			}
-			super.update(elapsed);
-		}
-
-		function grid_index(column:Int, row:Int):Int {
-			return column + grid_width * row;
-		}
-		
-		function grid_column(index:Int):Int {
-			return Std.int(index % grid_width);
-		}
-	
-		function grid_row(index:Int):Int {
-			return Std.int(index / grid_width);
-		}
 }
