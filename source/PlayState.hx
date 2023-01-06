@@ -60,7 +60,7 @@ class PlayState extends FlxState
 					value: actor.envelope.attackTime,
 					increment: 0.001,
 					on_change: f -> actor.envelope.attackTime = f,
-					name: " rise",
+					name: "rise",
 					minimum: 0.01
 				},
 				PAN => {
@@ -133,6 +133,7 @@ class PlayState extends FlxState
 		}
 
 		actor.screenCenter();
+		add(new SettingsDisplay(settings));
 	}
 
 	override public function update(elapsed:Float)
@@ -181,4 +182,41 @@ class Actor extends FlxSprite
 	public function release() {
 		envelope.close();
 	}
+}
+
+class SettingsDisplay extends FlxSprite{
+
+	var settings:SettingsController;
+	var grid_width:Int = 128;
+	var grid_height:Int = 64;
+
+	public function new(x:Float = 0, y:Float = 0, settings:SettingsController)
+		{
+			super(x, y);
+			this.settings = settings;
+			makeGraphic(grid_width, grid_height, FlxColor.WHITE);
+		}
+	
+		override function update(elapsed:Float)
+		{
+
+			@:privateAccess
+			var pixels = settings.canvas.image.getPixels();
+			for (i => pixel in pixels) {
+				graphic.bitmap.setPixel(grid_column(i), grid_row(i), pixel);
+			}
+			super.update(elapsed);
+		}
+
+		function grid_index(column:Int, row:Int):Int {
+			return column + grid_width * row;
+		}
+		
+		function grid_column(index:Int):Int {
+			return Std.int(index % grid_width);
+		}
+	
+		function grid_row(index:Int):Int {
+			return Std.int(index / grid_width);
+		}
 }

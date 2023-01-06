@@ -2,16 +2,12 @@ package dials;
 
 import akaifirehx.fire.Control.Button;
 import akaifirehx.fire.Control.EncoderMove;
+import akaifirehx.fire.display.Canvas.OledCanvasImageSync;
 import akaifirehx.midi.AkaiFireMidi;
 import akaifirehx.midi.Ports;
 import dials.Disk;
 import dials.JSON;
 import haxe.ds.ArraySort;
-#if imagedisplay
-import akaifirehx.fire.display.Canvas.ImageCanvas as PixelCanvas;
-#else
-import akaifirehx.fire.display.Canvas.OledCanvas as PixelCanvas;
-#end
 
 class SettingsController
 {
@@ -25,13 +21,15 @@ class SettingsController
 	
 	public var on_button_press:Button->Void = button -> trace('$button pressed');
 	public var on_button_release:Button->Void = button -> trace('$button released');
+	public var canvas(default, null):OledCanvasImageSync;
+
 	
 	public function new(disk:Disk)
 	{
 		this.disk = disk;
 		pads = [];
 		palette = {};
-		var canvas = new PixelCanvas();
+		canvas = new OledCanvasImageSync(128, 64);
 
 		var firePortConfig:PortConfig = {
 			portName: 'FL STUDIO FIRE Jack 1',
