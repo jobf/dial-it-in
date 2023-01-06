@@ -81,8 +81,8 @@ class SettingsController
 			fire.sendMessage(DisplaySetText(info, 1, y, false));
 			y += 12;
 		}
+
 		fire.sendMessage(DisplayShow);
-		// fire.sendMessage(PadSingleColor())
 	}
 
 	function setting_parameter_increase(encoder:EncoderMove)
@@ -118,15 +118,16 @@ class SettingsController
 		{
 			pad.index = pads.length;
 		}
+
 		pads.push(pad);
-		var x = Grid.column(pad.index);
-		var y = Grid.row(pad.index);
-		fire.sendMessage(PadSingleColor(palette.colors[pad.index_palette], x, y));
+		
+
 
 		var encoder_count = [for (k in pad.encoders.keys()) k].length;
 		trace('added pad ${pad.name} ${pad.index} with $encoder_count encoders');
 
 		pads_sort();
+		pads_show_colors();
 	}
 
 	var disk_file_path:String = "settings.json";
@@ -196,6 +197,14 @@ class SettingsController
 				}
 				return 0;
 			});
+		}
+	}
+
+	function pads_show_colors() {
+		for (pad in pads) {
+			var x = Grid.column(pad.index);
+			var y = Grid.row(pad.index);
+			fire.sendMessage(PadSingleColor(palette.colors[pad.index_palette], x, y));
 		}
 	}
 }
