@@ -18,12 +18,13 @@ class SettingsController
 	var data:FileModel;
 	var pads:Array<Pad>;
 	var palette:Palette;
-	
+	var index_increment_modifier:Int = 4;
+	var increment_modifiers:Array<Float> = [0.001, 0.01, 0.1, 0.5, 1.0, 1.1, 1.5, 2.0, 5.0, 10.0];
+
 	public var on_button_press:Button->Void = button -> trace('$button pressed');
 	public var on_button_release:Button->Void = button -> trace('$button released');
 	public var canvas(default, null):OledCanvasImageSync;
 
-	
 	public function new(disk:Disk)
 	{
 		this.disk = disk;
@@ -45,6 +46,8 @@ class SettingsController
 		fire.events.onButtonPress.add(button -> switch button
 		{
 			case REC: disk_save();
+			case PATUP: increment_modifier_change(1);
+			case PATDOWN: increment_modifier_change(-1);
 			case _:
 		});
 	}
@@ -54,7 +57,8 @@ class SettingsController
 		on_button_press(button);
 	}
 
-	function button_release(button:Button){
+	function button_release(button:Button)
+	{
 		on_button_release(button);
 	}
 
@@ -71,7 +75,10 @@ class SettingsController
 	function fire_refresh_display()
 	{
 		fire.sendMessage(DisplayClear(false));
-		fire.sendMessage(DisplaySetText(pads[index_pad_selected].name, 1, 1, false));
+
+		fire.sendMessage(DisplaySetText(pads[index_pad_selected].name, 0, 0, true));
+		fire.sendMessage(DisplaySetText('x${increment_modifiers[index_increment_modifier]}', 88, 0, true));
+
 		var y = 12;
 
 		for (info in pads[index_pad_selected].encoders_list())
@@ -80,6 +87,7 @@ class SettingsController
 			y += 12;
 		}
 
+		
 		fire.sendMessage(DisplayShow);
 	}
 
@@ -87,7 +95,7 @@ class SettingsController
 	{
 		if (pads[index_pad_selected].encoders.exists(encoder))
 		{
-			pads[index_pad_selected].change(encoder, 1);
+			pads[index_pad_selected].change(encoder, 1, increment_modifiers[index_increment_modifier]);
 			fire_refresh_display();
 		}
 	}
@@ -96,9 +104,16 @@ class SettingsController
 	{
 		if (pads[index_pad_selected].encoders.exists(encoder))
 		{
-			pads[index_pad_selected].change(encoder, -1);
+			pads[index_pad_selected].change(encoder, -1, increment_modifiers[index_increment_modifier]);
 			fire_refresh_display();
 		}
+	}
+
+	function increment_modifier_change(direction:Int)
+	{
+		var index_next = index_increment_modifier + direction;
+		index_increment_modifier = (index_next % increment_modifiers.length + increment_modifiers.length) % increment_modifiers.length;
+		fire_refresh_display();
 	}
 
 	public function pad_add(pad:Pad)
@@ -118,8 +133,6 @@ class SettingsController
 		}
 
 		pads.push(pad);
-		
-
 
 		var encoder_count = [for (k in pad.encoders.keys()) k].length;
 		trace('added pad ${pad.name} ${pad.index} with $encoder_count encoders');
@@ -198,8 +211,10 @@ class SettingsController
 		}
 	}
 
-	function pads_show_colors() {
-		for (pad in pads) {
+	function pads_show_colors()
+	{
+		for (pad in pads)
+		{
 			var x = Grid.column(pad.index);
 			var y = Grid.row(pad.index);
 			fire.sendMessage(PadSingleColor(palette.colors[pad.index_palette], x, y));
@@ -216,11 +231,10 @@ class Pad
 
 	public var encoders(default, null):Map<EncoderMove, Parameter> = [];
 
-
-	public function change(encoder:EncoderMove, direction:Int)
+	public function change(encoder:EncoderMove, direction:Int, increment_modifier:Float)
 	{
 		// var
-		encoders[encoder].change(direction);
+		encoders[encoder].change(direction, increment_modifier);
 	}
 
 	function encoder_format_info(encoder:EncoderMove):String
@@ -270,9 +284,9 @@ class Parameter
 		// trace('change $name by $increment to $value');
 	}
 
-	public function change(direction:Int)
+	public function change(direction:Int, increment_modifier:Float)
 	{
-		value += increment * direction;
+		value += (increment * increment_modifier) * direction;
 		changed();
 	}
 
@@ -286,8 +300,7 @@ class Parameter
 @:structInit
 class Palette
 {
-	public var colors:Array<Int> = 
-	[
+	public var colors:Array<Int> = [
 		0x793516,
 		0xa11898,
 		0x0b0d68,
@@ -297,18 +310,22 @@ class Palette
 	];
 }
 
-class Grid{
+class Grid
+{
 	static var width:Int = 64;
-	
-	public static function index(column:Int, row:Int):Int {
+
+	public static function index(column:Int, row:Int):Int
+	{
 		return column + width * row;
 	}
-	
-	public static function column(index:Int):Int {
+
+	public static function column(index:Int):Int
+	{
 		return Std.int(index % width);
 	}
 
-	public static function row(index:Int):Int {
+	public static function row(index:Int):Int
+	{
 		return Std.int(index / width);
 	}
 }
