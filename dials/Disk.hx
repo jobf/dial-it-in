@@ -4,6 +4,7 @@ package dials;
 import sys.FileSystem;
 import sys.io.File;
 #end
+using DateTools;
 
 interface Disk
 {
@@ -17,7 +18,11 @@ class DiskSys implements Disk
 
 	public function save(json:String, disk_file_path:String):Void
 	{
+		
 		#if !web
+		if (FileSystem.exists(disk_file_path)) {
+			File.copy(disk_file_path, disk_file_path + '_${Date.now().format("%Y-%m-%d_%H:%M:%S")}');
+		}
 		File.saveContent(disk_file_path, json);
 		trace('saved to $disk_file_path');
 		#end
