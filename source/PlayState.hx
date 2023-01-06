@@ -1,6 +1,7 @@
 package;
 
 import automation.Envelope;
+import automation.Oscillator;
 import dials.Disk;
 import dials.SettingsController;
 import flixel.FlxG;
@@ -74,11 +75,43 @@ class PlayState extends FlxState
 					on_change: f -> actor.jump_height = f,
 					name: "height",
 				},
-				// RESONANCE => {
-				// 	value: actor.y,
-				// 	on_change: f -> actor.y = f,
-				// 	name: "y",
-				// }
+				RESONANCE => {
+					value: actor.y_wobble,
+					on_change: f -> actor.y_wobble = f,
+					name: "y wobble",
+				}
+			]
+		});
+
+
+		settings.pad_add({
+			name: "actor wobble",
+			index_palette: 2,
+			encoders: [
+				// VOLUME => {
+				// 	value: actor.envelope.attackTime,
+				// 	increment: 0.001,
+				// 	on_change: f -> actor.envelope.attackTime = f,
+				// 	name: "rise",
+				// 	minimum: 0.01
+				// },
+				// PAN => {
+				// 	value: actor.envelope.releaseTime,
+				// 	increment: 0.01,
+				// 	on_change: f -> actor.envelope.releaseTime = f,
+				// 	name: "fall",
+				// 	minimum: 0.001,
+				// },
+				FILTER => {
+					value: actor.jump_height,
+					on_change: f -> actor.lfo.frequency_hz = f,
+					name: "speed",
+				},
+				RESONANCE => {
+					value: actor.y_wobble,
+					on_change: f -> actor.y_wobble = f,
+					name: "depth",
+				}
 			]
 		});
 
@@ -91,7 +124,7 @@ class PlayState extends FlxState
 			// case GRIDRIGHT:
 			// case ALT:
 			// case STOP:
-			case TRACK1: actor.envelope.open();
+			case TRACK1: actor.press();
 			// case TRACK2:
 			// case TRACK3:
 			// case TRACK4:
@@ -154,11 +187,14 @@ class PlayState extends FlxState
 class Actor
 {
 	public var envelope:Envelope;
+	public var lfo:LFO;
 	public var graphic:Fill;
 	public var jump_height:Float = 200;
-
+	public var y_wobble:Float = 200;
 	var x:Float;
 	var y:Float;
+	var oscillate_y:Float;
+
 
 	public function new(x:Float = 0, y:Float = 0)
 	{
@@ -168,15 +204,26 @@ class Actor
 		var framesPerSecond = 60;
 		envelope = new Envelope(framesPerSecond);
 		envelope.releaseTime = 0.3;
+		lfo = {
+			shape: SINE,
+			sampleRate: 44100,
+			frequency_hz: 30
+		};
+		lfo.shape = SINE;
 	}
 
 	public function update(elapsed:Float)
 	{
 		var amp_jump = envelope.nextAmplitude();
-		graphic.y = y - (jump_height * amp_jump);
+		var amp_wobble = lfo.next(elapsed);
+		var jump = -(jump_height * amp_jump);
+		var wobble = amp_wobble * y_wobble;
+		graphic.y = y + jump + wobble;
 	}
 
 	public function press() {
+
+		// trace('oscillate_y ${amp_wobble * 500}');
 		envelope.open();
 	}
 
