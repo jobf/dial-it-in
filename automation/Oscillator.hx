@@ -23,6 +23,23 @@ class WaveGenerate
 	}
 }
 
+class WaveTable
+{
+	var tables:Map<WaveShape, Array<Float>> = [];
+
+	public function new(sampleRate:Int)
+	{
+		tables[SINE] = [for (n in 0...sampleRate) WaveGenerate.sine(1, n, sampleRate)];
+		tables[SAW] = [for (n in 0...sampleRate) WaveGenerate.saw(1, n, sampleRate)];
+		tables[TRI] = [for (n in 0...sampleRate) WaveGenerate.triangle(1, n, sampleRate)];
+		tables[PULSE] = [for (n in 0...sampleRate) WaveGenerate.pulse(1, n, sampleRate)];
+	}
+
+	public function get(shape:WaveShape, position:Int):Float {
+		return tables[shape][position];
+	}	
+}
+
 enum WaveShape
 {
 	SINE;
@@ -37,31 +54,16 @@ typedef Oscillator = (frequency:Float, position:Float, sampleRate:Float) -> Floa
 class LFO
 {
 	public var frequency:Float;
-	var sampleRate:Int;
-	var oscillator:Oscillator = (frequency:Float, position:Float, sampleRate:Float) -> 0;
-	var position:Float = 0;
-	public var shape(default, set):WaveShape;
+	public var shape:WaveShape;
 
-	function set_shape(shape:WaveShape):WaveShape
-	{
-		oscillator = switch shape
-		{
-			case SINE:
-				WaveGenerate.sine;
-			case TRI:
-				WaveGenerate.triangle;
-			case PULSE:
-				WaveGenerate.pulse;
-			case SAW:
-				WaveGenerate.saw;
-		}
-		trace('LFO set shape $shape');
-		return shape;
-	}
+	var sampleRate:Int;
+	var oscillator:WaveTable;
+	var position:Int = 0;
 
 	public function next():Float
 	{
-		position ++;
-		return oscillator(frequency, position, sampleRate);
+		position++;
+		position = (position % sampleRate);
+		return oscillator.get(shape, position) * frequency;
 	}
 }

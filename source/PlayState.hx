@@ -204,11 +204,13 @@ class Actor
 		graphic = new Fill(x, y);
 		var framesPerSecond = 60;
 		envelope = new Envelope(framesPerSecond);
+		var wavetable = new WaveTable(framesPerSecond);
 		envelope.releaseTime = 0.3;
 		lfo = {
 			shape: SINE,
 			sampleRate: framesPerSecond,
-			frequency: 1
+			frequency: 1,
+			oscillator: wavetable
 		};
 		lfo.shape = SINE;
 	}
@@ -224,7 +226,6 @@ class Actor
 
 	public function press() {
 
-		// trace('oscillate_y ${amp_wobble * 500}');
 		envelope.open();
 	}
 
