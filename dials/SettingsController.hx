@@ -1,7 +1,6 @@
 package dials;
 
-import akaifirehx.fire.Control.Button;
-import akaifirehx.fire.Control.EncoderMove;
+import akaifirehx.fire.Control;
 import akaifirehx.fire.display.Canvas.OledCanvasImageSync;
 import akaifirehx.midi.AkaiFireMidi;
 import akaifirehx.midi.Ports;
@@ -15,8 +14,9 @@ class SettingsController
 	var fire:AkaiFireMidi;
 	var index_pad_selected:Int = 0;
 	var index_palette:Int = 0;
+	var index_page:Int = 0;
 	var data:FileModel;
-	var pads:Array<Pad>;
+	var pages:Array<Page>;
 	var palette:Palette;
 	var index_increment_modifier:Int = 4;
 	var increment_modifiers:Array<Float> = [0.001, 0.01, 0.1, 0.5, 1.0, 1.1, 1.5, 2.0, 5.0, 10.0];
@@ -28,7 +28,7 @@ class SettingsController
 	public function new(disk:Disk)
 	{
 		this.disk = disk;
-		pads = [];
+		pages = [];
 		palette = {};
 		canvas = new OledCanvasImageSync(128, 64);
 
@@ -48,9 +48,12 @@ class SettingsController
 			case REC: disk_save();
 			case PATUP: increment_modifier_change(1);
 			case PATDOWN: increment_modifier_change(-1);
+			case GRIDLEFT: index_page_change(-1);
+			case GRIDRIGHT: index_page_change(1);
 			case _:
 		});
 	}
+
 
 	function button_press(button:Button)
 	{
@@ -64,7 +67,7 @@ class SettingsController
 
 	function setting_select(index_pad:Int)
 	{
-		if (pads.length > index_pad)
+		if (pages[index_page].pads.length > index_pad)
 		{
 			index_pad_selected = index_pad;
 			fire_refresh_display();
@@ -76,35 +79,34 @@ class SettingsController
 	{
 		fire.sendMessage(DisplayClear(false));
 
-		fire.sendMessage(DisplaySetText(pads[index_pad_selected].name, 0, 0, true));
+		fire.sendMessage(DisplaySetText(pages[index_page].pads[index_pad_selected].name, 0, 0, true));
 		fire.sendMessage(DisplaySetText('x${increment_modifiers[index_increment_modifier]}', 88, 0, true));
 
 		var y = 12;
 
-		for (info in pads[index_pad_selected].encoders_list())
+		for (info in pages[index_page].pads[index_pad_selected].encoders_list())
 		{
 			fire.sendMessage(DisplaySetText(info, 1, y, false));
 			y += 12;
 		}
 
-		
 		fire.sendMessage(DisplayShow);
 	}
 
 	function setting_parameter_increase(encoder:EncoderMove)
 	{
-		if (pads[index_pad_selected].encoders.exists(encoder))
+		if (pages[index_page].pads[index_pad_selected].encoders.exists(encoder))
 		{
-			pads[index_pad_selected].change(encoder, 1, increment_modifiers[index_increment_modifier]);
+			pages[index_page].pads[index_pad_selected].change(encoder, 1, increment_modifiers[index_increment_modifier]);
 			fire_refresh_display();
 		}
 	}
 
 	function setting_parameter_decrease(encoder:EncoderMove)
 	{
-		if (pads[index_pad_selected].encoders.exists(encoder))
+		if (pages[index_page].pads[index_pad_selected].encoders.exists(encoder))
 		{
-			pads[index_pad_selected].change(encoder, -1, increment_modifiers[index_increment_modifier]);
+			pages[index_page].pads[index_pad_selected].change(encoder, -1, increment_modifiers[index_increment_modifier]);
 			fire_refresh_display();
 		}
 	}
@@ -116,11 +118,35 @@ class SettingsController
 		fire_refresh_display();
 	}
 
-	public function pad_add(pad:Pad)
+	function index_page_change(direction:Int) {
+		pads_clear_colors(pages[index_page].pads);
+		var index_next = index_page + direction;
+		index_page = (index_next % pages.length + pages.length) % pages.length;
+		trace('changed to page $index_page');
+		fire_refresh_display();
+		pads_show_colors(pages[index_page].pads);
+	}
+
+	public function page_add(page:Page)
 	{
-		if (data != null && data.pads != null)
+		if (page.index == null)
 		{
-			var models_matching = data.pads.filter(model -> model.name == pad.name);
+			page.index = pages.length;
+		}
+		pages.push(page);
+	}
+
+	public function pad_add(pad:Pad, index_page:Int)
+	{
+		if (index_page > pages.length)
+		{
+			trace('cannot add pad, page does not exist');
+			return;
+		}
+
+		if (data != null && data.pages[index_page] != null)
+		{
+			var models_matching = data.pages[index_page].pads.filter(model -> model.name == pad.name);
 			if (models_matching.length > 0)
 			{
 				var model_pad = models_matching[0];
@@ -129,23 +155,23 @@ class SettingsController
 		}
 		if (pad.index == null)
 		{
-			pad.index = pads.length;
+			pad.index = pages[index_page].pads.length;
 		}
 
-		pads.push(pad);
+		pages[index_page].pads.push(pad);
 
 		var encoder_count = [for (k in pad.encoders.keys()) k].length;
 		trace('added pad ${pad.name} ${pad.index} with $encoder_count encoders');
 
-		pads_sort();
-		pads_show_colors();
+		pads_sort(pages[index_page].pads);
+		pads_show_colors(pages[index_page].pads);
 	}
 
 	var disk_file_path:String = "settings.json";
 
 	public function disk_save():Void
 	{
-		var json:String = JSON.serialize(pads);
+		var json:String = JSON.serialize(pages);
 
 		disk.save(json, disk_file_path);
 	}
@@ -172,25 +198,57 @@ class SettingsController
 		trace('loaded json');
 		data = JSON.parse(json);
 		trace('parsed json');
-
-		for (model_pad in data.pads)
+		for (model_page in data.pages)
 		{
-			trace('setting up model ${model_pad.index}:${model_pad.name}');
-			var pads_matching = pads.filter(pad -> pad.name == model_pad.name);
-			if (pads_matching.length > 0)
+			var pages_matching = pages.filter(page -> page.name == model_page.name);
+			if (pages_matching.length > 0)
 			{
-				trace('set existing pad in pads array');
-				var pad = pads_matching[0];
-				pad_set_from_model(pad, model_pad);
+				trace('set existing page in pages array');
+				var page = pages_matching[0];
+				page.index = model_page.index;
+				page.name = model_page.name;
+				page.pads = [];
+				for (model_pad in model_page.pads)
+				{
+					trace('setting up model ${model_pad.index}:${model_pad.name}');
+					var pads_matching = page.pads.filter(pad -> pad.name == model_pad.name);
+					if (pads_matching.length > 0)
+					{
+						trace('set existing pad in pads array');
+						var pad = pads_matching[0];
+						pad_set_from_model(pad, model_pad);
+					}
+				}
+				pads_sort(page.pads);
 			}
 		}
+		
+		pages_sort(pages);
 
-		trace('loaded ${data.pads.length} models');
-
-		pads_sort();
+		trace('loaded ${data.pages.length} pages');
 	}
 
-	function pads_sort()
+	function pages_sort(pages:Array<Page>) {
+		if (pages.length > 0)
+			{
+				trace('total pages is ${pages.length}');
+	
+				ArraySort.sort(pages, (page1, page2) ->
+				{
+					if (page1.index > page2.index)
+					{
+						return 1;
+					}
+					if (page1.index < page2.index)
+					{
+						return -1;
+					}
+					return 0;
+				});
+			}
+	}
+
+	function pads_sort(pads:Array<Pad>)
 	{
 		if (pads.length > 0)
 		{
@@ -211,15 +269,34 @@ class SettingsController
 		}
 	}
 
-	function pads_show_colors()
+	function pads_show_colors(pads:Array<Pad>)
 	{
 		for (pad in pads)
 		{
-			var x = Grid.column(pad.index);
-			var y = Grid.row(pad.index);
-			fire.sendMessage(PadSingleColor(palette.colors[pad.index_palette], x, y));
+			pad_set_color(pad);
 		}
 	}
+
+	function pads_clear_colors(pads:Array<Pad>) {
+		for (pad in pads) {
+			pad_set_color(pad, 0x000000);
+		}
+	}
+
+	function pad_set_color(pad:Pad, ?color_override:Int=null){
+		var x = Grid.column(pad.index);
+		var y = Grid.row(pad.index);
+		var color = color_override == null ? palette.colors[pad.index_palette] : color_override;
+		fire.sendMessage(PadSingleColor(color, x, y));
+	}
+}
+
+@:structInit
+class Page
+{
+	public var name:String;
+	public var index:Null<Int> = null;
+	public var pads:Array<Pad> = [];
 }
 
 @:structInit
@@ -233,7 +310,6 @@ class Pad
 
 	public function change(encoder:EncoderMove, direction:Int, increment_modifier:Float)
 	{
-		// var
 		encoders[encoder].change(direction, increment_modifier);
 	}
 

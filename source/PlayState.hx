@@ -23,6 +23,13 @@ class PlayState extends FlxState
 		actor = new Actor(0, y_screen_center);
 		add(actor.graphic);
 		
+		var settings_page_actor:Page = {
+			name: "actor",
+		};
+
+		settings.page_add(settings_page_actor);
+		trace('new page ${settings_page_actor.index}');
+		
 		settings.pad_add({
 			name: "actor geometry",
 			index_palette: 0,
@@ -50,7 +57,7 @@ class PlayState extends FlxState
 				// 	name: "y",
 				// }
 			]
-		});
+		}, settings_page_actor.index);
 
 		settings.pad_add({
 			name: "actor jump",
@@ -81,7 +88,7 @@ class PlayState extends FlxState
 					name: "y wobble",
 				}
 			]
-		});
+		}, settings_page_actor.index);
 
 
 		settings.pad_add({
@@ -114,7 +121,7 @@ class PlayState extends FlxState
 					name: "depth",
 				}
 			]
-		});
+		}, settings_page_actor.index);
 
 		settings.on_button_press = button -> switch button
 		{
@@ -164,6 +171,25 @@ class PlayState extends FlxState
 			// case ENCODERMODE:
 			case _:
 		}
+
+		var settings_page_actor:Page = {
+			name: "actor more",
+		};
+
+		settings.page_add(settings_page_actor);
+		trace('new page ${settings_page_actor.index}');
+		settings.pad_add({
+			name: "color",
+			index_palette: 0,
+			encoders: [
+				VOLUME => {
+					value: actor.graphic.angularVelocity,
+					on_change: f -> actor.graphic.angularVelocity = f,
+					name: "angularVelocity",
+					minimum: 0,
+				}
+			]
+		}, settings_page_actor.index);
 
 		actor.graphic.screenCenter();
 		add(new SettingsDisplay(settings));

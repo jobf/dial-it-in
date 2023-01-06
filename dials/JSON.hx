@@ -8,29 +8,40 @@ import json2object.JsonWriter;
 
 class JSON
 {
-	public static function serialize(pads:Array<Pad>):String
+	public static function serialize(pages:Array<Page>):String
 	{
-		var models_pad:Array<PadModel> = [];
-		for (index => pad in pads)
+		var models_page:Array<PageModel> = [];
+
+		for (page in pages)
 		{
-			var models_encoder:Array<EncoderModel> = [];
-			for (enc in pad.encoders.keys())
+			var model_page:PageModel = {
+				pads: [],
+				name: page.name,
+				index: page.index
+			}
+			models_page.push(model_page);
+			
+			for (index => pad in page.pads)
 			{
-				models_encoder.push({
-					value: pad.encoders[enc].value,
-					encoder: enc
+				var models_encoder:Array<EncoderModel> = [];
+				for (enc in pad.encoders.keys())
+				{
+					models_encoder.push({
+						value: pad.encoders[enc].value,
+						encoder: enc
+					});
+				}
+				model_page.pads.push({
+					index: index,
+					index_palette: pad.index,
+					name: pad.name,
+					encoders: models_encoder
 				});
 			}
-			models_pad.push({
-				index: index,
-				index_palette: pad.index,
-				name: pad.name,
-				encoders: models_encoder
-			});
 		}
-		var a = [];
+
 		var model_file:FileModel = {
-			pads: models_pad
+			pages: models_page
 		}
 
 		var writer = new JsonWriter<FileModel>();
@@ -50,7 +61,7 @@ class JSON
 				trace(error);
 			}
 			return {
-				pads: []
+				pages: []
 			}
 		}
 
@@ -61,7 +72,7 @@ class JSON
 @:structInit
 class FileModel
 {
-	public var pads:Array<PadModel>;
+	public var pages:Array<PageModel>;
 }
 
 @:structInit
@@ -78,4 +89,12 @@ class PadModel
 	public var index_palette:Int;
 	public var name:String;
 	public var encoders:Array<EncoderModel>;
+}
+
+@:structInit
+class PageModel
+{
+	public var index:Int;
+	public var name:String;
+	public var pads:Array<PadModel>;
 }
