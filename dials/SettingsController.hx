@@ -54,7 +54,6 @@ class SettingsController
 		});
 	}
 
-
 	function button_press(button:Button)
 	{
 		on_button_press(button);
@@ -67,6 +66,8 @@ class SettingsController
 
 	function setting_select(index_pad:Int)
 	{
+		trace('pushed pad $index_pad');
+		trace('there are ${pages[index_page].pads.length}');
 		if (pages[index_page].pads.length > index_pad)
 		{
 			index_pad_selected = index_pad;
@@ -77,20 +78,32 @@ class SettingsController
 
 	function fire_refresh_display()
 	{
-		fire.sendMessage(DisplayClear(false));
-
-		fire.sendMessage(DisplaySetText(pages[index_page].pads[index_pad_selected].name, 0, 0, true));
-		fire.sendMessage(DisplaySetText('x${increment_modifiers[index_increment_modifier]}', 88, 0, true));
-
-		var y = 12;
-
-		for (info in pages[index_page].pads[index_pad_selected].encoders_list())
+		if (index_page < pages.length)
 		{
-			fire.sendMessage(DisplaySetText(info, 1, y, false));
-			y += 12;
-		}
+			fire.sendMessage(DisplayClear(false));
 
-		fire.sendMessage(DisplayShow);
+			var page = pages[index_page];
+			if (page.pads != null)
+			{
+				if(index_pad_selected < page.pads.length)
+				{
+					var pad = page.pads[index_pad_selected];
+
+					fire.sendMessage(DisplaySetText(pad.name, 0, 0, true));
+					fire.sendMessage(DisplaySetText('x${increment_modifiers[index_increment_modifier]}', 88, 0, true));
+
+					var y = 12;
+
+					for (info in pad.encoders_list())
+					{
+						fire.sendMessage(DisplaySetText(info, 1, y, false));
+						y += 12;
+					}
+				}
+			}
+
+			fire.sendMessage(DisplayShow);
+		}
 	}
 
 	function setting_parameter_increase(encoder:EncoderMove)
@@ -118,7 +131,8 @@ class SettingsController
 		fire_refresh_display();
 	}
 
-	function index_page_change(direction:Int) {
+	function index_page_change(direction:Int)
+	{
 		pads_clear_colors(pages[index_page].pads);
 		var index_next = index_page + direction;
 		index_page = (index_next % pages.length + pages.length) % pages.length;
@@ -134,6 +148,11 @@ class SettingsController
 			page.index = pages.length;
 		}
 		pages.push(page);
+		// for (pad in page.pads) {
+		// 	pad_add(pad, )
+		// }
+		pads_sort(page.pads);
+		pads_show_colors(page.pads);
 	}
 
 	public function pad_add(pad:Pad, index_page:Int)
@@ -207,7 +226,7 @@ class SettingsController
 				var page = pages_matching[0];
 				page.index = model_page.index;
 				page.name = model_page.name;
-				page.pads = [];
+				// page.pads = [];
 				for (model_pad in model_page.pads)
 				{
 					trace('setting up model ${model_pad.index}:${model_pad.name}');
@@ -222,30 +241,31 @@ class SettingsController
 				pads_sort(page.pads);
 			}
 		}
-		
+
 		pages_sort(pages);
 
 		trace('loaded ${data.pages.length} pages');
 	}
 
-	function pages_sort(pages:Array<Page>) {
+	function pages_sort(pages:Array<Page>)
+	{
 		if (pages.length > 0)
+		{
+			trace('total pages is ${pages.length}');
+
+			ArraySort.sort(pages, (page1, page2) ->
 			{
-				trace('total pages is ${pages.length}');
-	
-				ArraySort.sort(pages, (page1, page2) ->
+				if (page1.index > page2.index)
 				{
-					if (page1.index > page2.index)
-					{
-						return 1;
-					}
-					if (page1.index < page2.index)
-					{
-						return -1;
-					}
-					return 0;
-				});
-			}
+					return 1;
+				}
+				if (page1.index < page2.index)
+				{
+					return -1;
+				}
+				return 0;
+			});
+		}
 	}
 
 	function pads_sort(pads:Array<Pad>)
@@ -277,13 +297,16 @@ class SettingsController
 		}
 	}
 
-	function pads_clear_colors(pads:Array<Pad>) {
-		for (pad in pads) {
+	function pads_clear_colors(pads:Array<Pad>)
+	{
+		for (pad in pads)
+		{
 			pad_set_color(pad, 0x000000);
 		}
 	}
 
-	function pad_set_color(pad:Pad, ?color_override:Int=null){
+	function pad_set_color(pad:Pad, ?color_override:Int = null)
+	{
 		var x = Grid.column(pad.index);
 		var y = Grid.row(pad.index);
 		var color = color_override == null ? palette.colors[pad.index_palette] : color_override;
@@ -346,30 +369,32 @@ class Parameter
 	var increment:Float = 1;
 	var on_change:Float->Void;
 
-	function changed():Void
+	function change_value(value:Float, amount:Float):Float
 	{
-		if (value > maximum)
+		var value_next = value + amount;
+		if (value_next > maximum)
 		{
-			value = maximum;
+			value_next = maximum;
 		}
-		if (value < minimum)
+		if (value_next < minimum)
 		{
-			value = minimum;
+			value_next = minimum;
 		}
-		on_change(value);
+		return value_next;
+		// on_change(value);
 		// trace('change $name by $increment to $value');
 	}
 
 	public function change(direction:Int, increment_modifier:Float)
 	{
-		value += (increment * increment_modifier) * direction;
-		changed();
+		value = change_value(value, (increment * increment_modifier) * direction);
+		on_change(value);
 	}
 
 	public function set(value:Float)
 	{
 		this.value = value;
-		changed();
+		on_change(value);
 	}
 }
 
