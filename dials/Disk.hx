@@ -1,10 +1,12 @@
 package dials;
 
+import lime.utils.Assets;
+
+using DateTools;
 #if !web
 import sys.FileSystem;
 import sys.io.File;
 #end
-using DateTools;
 
 interface Disk
 {
@@ -40,5 +42,21 @@ class DiskSys implements Disk
 		#end
 
 		return "";
+	}
+}
+
+
+class DiskAssets implements Disk
+{
+	public function new() {}
+
+	public function save(json:String, disk_file_path:String):Void
+	{
+		
+	}
+
+	public function load(asset_path:String):String
+	{
+		return Assets.getText(asset_path);
 	}
 }
